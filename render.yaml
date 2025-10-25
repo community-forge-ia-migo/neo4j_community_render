@@ -1,0 +1,72 @@
+services:
+  # Servicio para la base de datos Neo4j
+  - type: web # Render lo trata como un Web Service
+    name: mi-neo4j-db # Nombre único para tu servicio
+    env: docker # Especifica que es un despliegue Docker
+    image: docker.io/library/neo4j:5-community # Imagen Docker oficial de la edición Community
+    plan: free # Plan gratuito de Render
+    
+    # --- Configuración de Persistencia (CRÍTICO) ---
+    disk:
+      name: neo4j-data # Nombre del disco persistente
+      mountPath: /data # Ruta de montaje dentro del contenedor para los datos de la BD
+      sizeGB: 1 # Tamaño del disco (1 GB incluido en el plan gratuito)
+
+    # --- Variables de Entorno (Configuración y Seguridad) ---
+    envVars:
+      # 1. Autenticación (Obligatorio)
+      - key: NEO4J_AUTH
+        value: neo4j/tu_contraseña_muy_segura # ¡Cambia esto! Formato: usuario/contraseña
+        sync: false # Evita sincronizar archivos sensibles
+
+      # 2. Plugins Recomendados
+      # APOC (Awesome Procedures On Cypher) es esencial para operaciones avanzadas
+      - key: NEO4J_PLUGINS
+        value: '["apoc"]'
+        sync: false
+
+      # 3. Configuración de Memoria (Optimizado para plan gratuito de 512MB RAM)
+      # Ajusta el heap de Java para usar la memoria disponible sin exceder los límites.
+      - key: NEO4J_dbms_memory_heap_initial__size
+        value: 256m
+        sync: false
+      - key: NEO4J_dbms_memory_heap_max__size
+        value: 256m
+        sync: false
+      # Configura la memoria de página (off-heap) para dejar espacio al SO y otros procesos.
+      - key: NEO4J_dbms_memory_pagecache_size
+        value: 128m
+        sync: false
+
+      # 4. Configuración de Conexión y Red
+      # Escucha en todas las interfaces dentro del contenedor.
+      - key: NEO4J_dbms_default__listen__address
+        value: 0.0.0.0
+        sync: false
+      # Permite conexiones desde otros servicios de Render (red privada).
+      - key: NEO4J_dbms_connector_bolt_listen__address
+        value: 0.0.0.0:7687
+        sync: false
+      # Permite el acceso al Neo4j Browser desde la web.
+      - key: NEO4J_dbms_connector_http_listen__address
+        value: 0.0.0.0:7474
+        sync: false
+
+      # 5. Configuración de Seguridad (Recomendado para producción)
+      # Deshabilita el modo de transacción completo para reducir sobrecarga en escenarios simples.
+      - key: NEO4J_dbms_security_procedures_unrestricted
+        value: apoc.*
+        sync: false
+      # Permite procedimientos APOC sin restricciones de seguridad (útil en desarrollo).
+      - key: NEO4J_dbms_security_procedures_allowlist
+        value: apoc.*
+        sync: false
+
+    # --- Health Check (Para que Render sepa si la BD está sana) ---
+    healthCheck:
+      # Usa el endpoint de descubrimiento de Neo4j, que responde rápido.
+      path: /db/manage/server/jmx/domain/java.lang
+      initialDelaySeconds: 60 # Tiempo para que Neo4j inicie completamente
+      periodSeconds: 10       # Comprobar cada 10 segundos
+      timeoutSeconds: 5       # Tiempo de espera de la respuesta
+      failureThreshold: 5     # Número de fallos antes de reiniciar
