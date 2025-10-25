@@ -3,7 +3,7 @@ services:
     name: mi-neo4j-db
     env: docker
     # CORRECCIÓN 1: La imagen es una cadena de texto, no una lista.
-    image: docker.io/library/neo4j:5-community
+    image: neo4j:5-community
     plan: free
     disk:
       name: neo4j-data
