@@ -2,13 +2,13 @@ services:
   - type: web
     name: mi-neo4j-db
     env: docker
-    # CORRECCIÓN 1: La imagen es una cadena de texto, no una lista.
-    image: neo4j:5-community
+    image: docker.io/library/neo4j:5-community
     plan: free
     disk:
       name: neo4j-data
       mountPath: /data
       sizeGB: 1
+      
     envVars:
       - key: NEO4J_AUTH
         value: neo4j/tu_contraseña_muy_segura
@@ -40,10 +40,9 @@ services:
       - key: NEO4J_dbms_security_procedures_allowlist
         value: apoc.*
         sync: false
-    # CORRECCIÓN 2: La forma correcta de definir un health check complejo
-    # es usando un objeto anidado bajo la clave "httpCheck".
+        
+
     httpCheck:
-      # Este endpoint responde rápido y es ideal para verificar que Neo4j está vivo.
       path: /db/manage/server/jmx/domain/java.lang
       initialDelaySeconds: 60
       periodSeconds: 10
